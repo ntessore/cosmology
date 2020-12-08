@@ -34,6 +34,8 @@ except ModuleNotFoundError:
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'sphinx.ext.autosummary',
+    'sphinx.ext.napoleon',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -43,6 +45,10 @@ templates_path = ['_templates']
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+
+# Boolean indicating whether to scan all found documents for autosummary
+# directives, and to generate stub pages for each.
+autosummary_generate = True
 
 
 # -- Options for HTML output -------------------------------------------------

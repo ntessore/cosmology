@@ -12,3 +12,4 @@ cosmology/scalar_inv_efuncs.c
 cosmology/scalar_inv_efuncs*.so
 
 docs/_build
+docs/api

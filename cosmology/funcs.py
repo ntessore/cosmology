@@ -83,7 +83,7 @@ def z_at_value(func, fval, zmin=1e-8, zmax=1000, ztol=1e-8, maxfun=500):
 
     Finally interpolate to find the redshift at each distance modulus:
 
-    >>> zvals = np.interp(Dvals.value, Dgrid.value, zgrid)
+    >>> zvals = np.interp(Dvals, Dgrid, zgrid)
 
     Examples
     --------
@@ -92,19 +92,19 @@ def z_at_value(func, fval, zmin=1e-8, zmax=1000, ztol=1e-8, maxfun=500):
     The age and lookback time are monotonic with redshift, and so a
     unique solution can be found:
 
-    >>> z_at_value(Planck13.age, 2.)  # doctest: +FLOAT_CMP
-    3.19812268
+    >>> z_at_value(Planck13.age, 2.)  # doctest: +ELLIPSIS
+    3.19812...
 
     The angular diameter is not monotonic however, and there are two
     redshifts that give a value of 1500 Mpc. Use the zmin and zmax keywords
     to find the one you're interested in:
 
     >>> z_at_value(Planck13.angular_diameter_distance,
-    ...            1500, zmax=1.5)  # doctest: +FLOAT_CMP
-    0.6812769577
+    ...            1500, zmax=1.5)  # doctest: +ELLIPSIS
+    0.68127...
     >>> z_at_value(Planck13.angular_diameter_distance,
-    ...            1500, zmin=2.5)  # doctest: +FLOAT_CMP
-    3.7914913242
+    ...            1500, zmin=2.5)  # doctest: +ELLIPSIS
+    3.79149...
 
     Also note that the luminosity distance and distance modulus (two
     other commonly inverted quantities) are monotonic in flat and open
