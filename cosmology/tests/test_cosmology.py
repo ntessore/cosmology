@@ -45,8 +45,6 @@ def test_init():
     with pytest.raises(ValueError):
         cosmo = core.FlatLambdaCDM(H0=70, Om0=0.27)
         cosmo.Odm(1)
-    with pytest.raises(TypeError):
-        core.default_cosmology.validate(4)
 
 
 def test_basic():

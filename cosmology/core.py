@@ -19,8 +19,8 @@ from . import parameters
 # and Linder 2003, PRL 90, 91301
 
 __all__ = ["FLRW", "LambdaCDM", "FlatLambdaCDM", "wCDM", "FlatwCDM",
-           "Flatw0waCDM", "w0waCDM", "wpwaCDM", "w0wzCDM",
-           "default_cosmology"] + parameters.available
+           "Flatw0waCDM", "w0waCDM", "wpwaCDM", "w0wzCDM"] \
+          + parameters.available
 
 __doctest_requires__ = {'*': ['scipy']}
 
@@ -3278,91 +3278,3 @@ for key in parameters.available:
 
 # don't leave these variables floating around in the namespace
 del key, par, cosmo
-
-#########################################################################
-# The science state below contains the current cosmology.
-#########################################################################
-
-
-class default_cosmology:
-    """
-    The default cosmology to use.  To change it::
-
-        >>> from cosmology import default_cosmology, WMAP7
-        >>> with default_cosmology.set(WMAP7):
-        ...     # WMAP7 cosmology in effect
-        ...     pass
-
-    Or, you may use a string::
-
-        >>> with default_cosmology.set('WMAP7'):
-        ...     # WMAP7 cosmology in effect
-        ...     pass
-    """
-    _value = 'Planck18'
-
-    def __init__(self):
-        raise RuntimeError(
-            "This class is a singleton.  Do not instantiate.")
-
-    @classmethod
-    def get(cls):
-        """
-        Get the current default cosmology value.
-        """
-        return cls.validate(cls._value)
-
-    @classmethod
-    def set(cls, value):
-        """
-        Set the current default cosmology value.
-        """
-        class _Context:
-            def __init__(self, parent, value):
-                self._value = value
-                self._parent = parent
-
-            def __enter__(self):
-                pass
-
-            def __exit__(self, type, value, tb):
-                self._parent._value = self._value
-
-            def __repr__(self):
-                # Ensure we have a single-line repr, just in case our
-                # value is not something simple like a string.
-                value_repr, lb, _ = repr(self._parent._value).partition('\n')
-                if lb:
-                    value_repr += '...'
-                return (f'<default_cosmology {self._parent.__name__}: {value_repr}>')
-
-        ctx = _Context(cls, cls._value)
-        value = cls.validate(value)
-        cls._value = value
-        return ctx
-
-    @staticmethod
-    def get_cosmology_from_string(arg):
-        """ Return a cosmology instance from a string.
-        """
-        if arg == 'no_default':
-            cosmo = None
-        else:
-            try:
-                cosmo = getattr(sys.modules[__name__], arg)
-            except AttributeError:
-                s = "Unknown cosmology '{}'. Valid cosmologies:\n{}".format(
-                    arg, parameters.available)
-                raise ValueError(s)
-        return cosmo
-
-    @classmethod
-    def validate(cls, value):
-        if value is None:
-            value = 'Planck18'
-        if isinstance(value, str):
-            return cls.get_cosmology_from_string(value)
-        elif isinstance(value, Cosmology):
-            return value
-        else:
-            raise TypeError("default_cosmology must be a string or Cosmology instance.")
