@@ -56,7 +56,21 @@ autosummary_generate = True
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-#html_theme = 'alabaster'
+html_theme = 'classic'
+
+# A dictionary of options that influence the look and feel of the selected
+# theme. These are theme-specific.
+#
+html_theme_options = {
+    'sidebarwidth': 300,
+}
+
+# Custom sidebar templates, must be a dictionary that maps document names to
+# template names.
+#
+html_sidebars = {
+   '**': ['localtoc.html', 'searchbox.html'],
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
