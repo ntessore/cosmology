@@ -1,5 +1,8 @@
 __pycache__
 
+.tox
+.tmp
+
 build
 dist
 *.egg-info
