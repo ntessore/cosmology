@@ -1,0 +1,9 @@
+__pycache__
+
+build
+dist
+*.egg-info
+
+cosmology/version.py
+cosmology/scalar_inv_efuncs.c
+cosmology/scalar_inv_efuncs*.so

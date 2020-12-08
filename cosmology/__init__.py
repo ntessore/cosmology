@@ -7,5 +7,10 @@ See the `Astropy documentation
 detailed usage examples and references.
 """
 
+try:
+    from .version import version as __version__
+except ModuleNotFoundError:
+    pass
+
 from .core import *
 from .funcs import *
