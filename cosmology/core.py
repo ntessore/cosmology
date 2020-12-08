@@ -4,7 +4,6 @@ import sys
 from math import acos, sin, cos, sqrt, pi, exp, log, floor
 from abc import ABCMeta, abstractmethod
 from inspect import signature
-import warnings
 
 import numpy as np
 
@@ -3402,9 +3401,6 @@ class default_cosmology:
         if value is None:
             value = 'Planck18'
         if isinstance(value, str):
-            if value == 'Planck18_arXiv_v2':
-                warnings.warn(f"{value} is deprecated in astropy 4.2, use Planck18 instead",
-                              warnings.DeprecationWarning)
             return cls.get_cosmology_from_string(value)
         elif isinstance(value, Cosmology):
             return value

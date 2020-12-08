@@ -28,9 +28,6 @@ The list of cosmologies available are given by the tuple
 Planck 2018 (Planck18) parameters from Planck Collaboration 2020,
  A&A, 641, A6 (Paper VI), Table 2 (TT, TE, EE + lowE + lensing + BAO)
 
-Planck 2018 (Planck18_arXiv_v2) parameters from Planck Collaboration 2018,
- arXiv:1807.06209v2 (Paper VI), Table 2 (TT, TE, EE + lowE + lensing + BAO)
-
 Planck 2015 (Planck15) parameters from Planck Collaboration 2016, A&A, 594, A13
  (Paper XIII), Table 4 (TT, TE, EE + lowP + lensing + ext)
 
@@ -71,26 +68,6 @@ Planck18 = dict(
     flat=True,
     m_nu=[0., 0., 0.06],
     reference=("Planck Collaboration 2018, 2020, A&A, 641, A6  (Paper VI),"
-               " Table 2 (TT, TE, EE + lowE + lensing + BAO)")
-)
-
-# Planck 2018 paper VI v2.  Identical to Planck18 above.
-# Warning: deprecated and will be removed in future versions.
-Planck18_arXiv_v2 = dict(
-    Oc0=0.2607,
-    Ob0=0.04897,
-    Om0=0.30966,
-    H0=67.66,
-    n=0.9665,
-    sigma8=0.8102,
-    tau=0.0561,
-    z_reion=7.82,
-    t0=13.787,
-    Tcmb0=2.7255,
-    Neff=3.046,
-    flat=True,
-    m_nu=[0., 0., 0.06],
-    reference=("DEPRECATED: Planck Collaboration 2018, arXiv:1807.06209 v2 (Paper VI),"
                " Table 2 (TT, TE, EE + lowE + lensing + BAO)")
 )
 
@@ -191,5 +168,4 @@ WMAP5 = dict(
 )
 
 # If new parameters are added, this list must be updated
-available = ['Planck18', 'Planck18_arXiv_v2', 'Planck15', 'Planck13', 'WMAP9', 'WMAP7',
-             'WMAP5']
+available = ['Planck18', 'Planck15', 'Planck13', 'WMAP9', 'WMAP7', 'WMAP5']
