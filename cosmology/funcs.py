@@ -7,7 +7,6 @@ import warnings
 import numpy as np
 
 from .core import CosmologyError
-from astropy.units import Quantity
 
 __all__ = ['z_at_value']
 
@@ -123,11 +122,7 @@ fval is not bracketed by func(zmin) and func(zmax). This means either
 there is no solution, or that there is more than one solution between
 zmin and zmax satisfying fval = func(z).""")
 
-    if isinstance(fval_zmin, Quantity):
-        val = fval.to_value(fval_zmin.unit)
-        f = lambda z: abs(func(z).value - val)
-    else:
-        f = lambda z: abs(func(z) - fval)
+    f = lambda z: abs(func(z) - fval)
 
     zbest, resval, ierr, ncall = fminbound(f, zmin, zmax, maxfun=maxfun,
                                            full_output=1, xtol=ztol)

@@ -8,10 +8,7 @@ from inspect import signature
 import numpy as np
 
 from . import scalar_inv_efuncs
-
-from astropy import constants as const
-from astropy import units as u
-
+from . import const
 from . import parameters
 
 # Originally authored by Andrew Becker (becker@astro.washington.edu),
@@ -58,22 +55,18 @@ __doctest_requires__ = {'*': ['scipy']}
 
 # Some conversion constants -- useful to compute them once here
 #  and reuse in the initialization rather than have every object do them
-# Note that the call to cgs is actually extremely expensive,
-#  so we actually skip using the units package directly, and
-#  hardwire the conversion from mks to cgs. This assumes that constants
-#  will always return mks by default -- if this is made faster for simple
-#  cases like this, it should be changed back.
-# Note that the unit tests should catch it if this happens
-H0units_to_invs = (u.km / (u.s * u.Mpc)).to(1.0 / u.s)
-sec_to_Gyr = u.s.to(u.Gyr)
+H0units_to_invs = 1000. / const.Mpc
+sec_to_Gyr = 1. / const.Gyr
 # const in critical density in cgs units (g cm^-3)
-critdens_const = 3. / (8. * pi * const.G.value * 1000)
+critdens_const = 3. / (8. * pi * const.G * 1000)
 arcsec_in_radians = pi / (3600. * 180)
 arcmin_in_radians = pi / (60. * 180)
 # Radiation parameter over c^2 in cgs (g cm^-3 K^-4)
-a_B_c2 = 4e-3 * const.sigma_sb.value / const.c.value ** 3
+a_B_c2 = 4e-3 * const.sigma_sb / const.c ** 3
 # Boltzmann constant in eV / K
-kB_evK = const.k_B.to(u.eV / u.K)
+kB_evK = const.k_B / const.e
+# speed of light in Mpc/Gyr
+c_Mpc_Gyr = const.Gyr / const.Mpc * const.c
 
 
 def isiterable(obj):
@@ -148,8 +141,8 @@ class FLRW(Cosmology, metaclass=ABCMeta):
     read only.
     """
 
-    def __init__(self, H0, Om0, Ode0, Tcmb0=0, Neff=3.04,
-                 m_nu=u.Quantity(0.0, u.eV), Ob0=None, name=None):
+    def __init__(self, H0, Om0, Ode0, Tcmb0=0, Neff=3.04, m_nu=0.0, Ob0=None,
+                 name=None):
 
         # all densities are in units of the critical density
         self._Om0 = float(Om0)
@@ -175,27 +168,27 @@ class FLRW(Cosmology, metaclass=ABCMeta):
         self.name = name
 
         # Tcmb may have units
-        self._Tcmb0 = u.Quantity(Tcmb0, unit=u.K)
-        if not self._Tcmb0.isscalar:
+        self._Tcmb0 = Tcmb0
+        if not np.isscalar(self._Tcmb0):
             raise ValueError("Tcmb0 is a non-scalar quantity")
 
         # Hubble parameter at z=0, km/s/Mpc
-        self._H0 = u.Quantity(H0, unit=u.km / u.s / u.Mpc)
-        if not self._H0.isscalar:
+        self._H0 = H0
+        if not np.isscalar(self._H0):
             raise ValueError("H0 is a non-scalar quantity")
 
         # 100 km/s/Mpc * h = H0 (so h is dimensionless)
-        self._h = self._H0.value / 100.
+        self._h = self._H0 / 100.
         # Hubble distance
-        self._hubble_distance = (const.c / self._H0).to(u.Mpc)
+        self._hubble_distance = const.c / 1000. / self._H0
         # H0 in s^-1; don't use units for speed
-        H0_s = self._H0.value * H0units_to_invs
+        H0_s = self._H0 * H0units_to_invs
         # Hubble time; again, avoiding units package for speed
-        self._hubble_time = u.Quantity(sec_to_Gyr / H0_s, u.Gyr)
+        self._hubble_time = sec_to_Gyr / H0_s
 
         # critical density at z=0 (grams per cubic cm)
         cd0value = critdens_const * H0_s ** 2
-        self._critical_density0 = u.Quantity(cd0value, u.g / u.cm ** 3)
+        self._critical_density0 = cd0value
 
         # Load up neutrino masses.  Note: in Py2.x, floor is floating
         self._nneutrinos = int(floor(self._Neff))
@@ -207,39 +200,31 @@ class FLRW(Cosmology, metaclass=ABCMeta):
         # interactions, which could be unusual if one is considering sterile
         # neutrinos)
         self._massivenu = False
-        if self._nneutrinos > 0 and self._Tcmb0.value > 0:
+        if self._nneutrinos > 0 and self._Tcmb0 > 0:
             self._neff_per_nu = self._Neff / self._nneutrinos
-
-            # We can't use the u.Quantity constructor as we do above
-            # because it doesn't understand equivalencies
-            if not isinstance(m_nu, u.Quantity):
-                raise ValueError("m_nu must be a Quantity")
-
-            m_nu = m_nu.to(u.eV, equivalencies=u.mass_energy())
 
             # Now, figure out if we have massive neutrinos to deal with,
             # and, if so, get the right number of masses
             # It is worth the effort to keep track of massless ones separately
             # (since they are quite easy to deal with, and a common use case
             # is to set only one neutrino to have mass)
-            if m_nu.isscalar:
+            if np.isscalar(m_nu):
                 # Assume all neutrinos have the same mass
-                if m_nu.value == 0:
+                if m_nu == 0:
                     self._nmasslessnu = self._nneutrinos
                     self._nmassivenu = 0
                 else:
                     self._massivenu = True
                     self._nmasslessnu = 0
                     self._nmassivenu = self._nneutrinos
-                    self._massivenu_mass = (m_nu.value *
-                                            np.ones(self._nneutrinos))
+                    self._massivenu_mass = (m_nu * np.ones(self._nneutrinos))
             else:
                 # Make sure we have the right number of masses
                 # -unless- they are massless, in which case we cheat a little
-                if m_nu.value.min() < 0:
+                if np.min(m_nu) < 0:
                     raise ValueError("Invalid (negative) neutrino mass"
                                      " encountered")
-                if m_nu.value.max() == 0:
+                if np.max(m_nu) == 0:
                     self._nmasslessnu = self._nneutrinos
                     self._nmassivenu = 0
                 else:
@@ -248,18 +233,17 @@ class FLRW(Cosmology, metaclass=ABCMeta):
                         errstr = "Unexpected number of neutrino masses"
                         raise ValueError(errstr)
                     # Segregate out the massless ones
-                    self._nmasslessnu = len(np.nonzero(m_nu.value == 0)[0])
+                    self._nmasslessnu = len(np.nonzero(np.equal(m_nu, 0))[0])
                     self._nmassivenu = self._nneutrinos - self._nmasslessnu
-                    w = np.nonzero(m_nu.value > 0)[0]
-                    self._massivenu_mass = m_nu[w]
+                    w = np.nonzero(np.greater(m_nu, 0))[0]
+                    self._massivenu_mass = np.take(m_nu, w)
 
         # Compute photon density, Tcmb, neutrino parameters
         # Tcmb0=0 removes both photons and neutrinos, is handled
         # as a special case for efficiency
-        if self._Tcmb0.value > 0:
+        if self._Tcmb0 > 0:
             # Compute photon density from Tcmb
-            self._Ogamma0 = a_B_c2 * self._Tcmb0.value ** 4 /\
-                self._critical_density0.value
+            self._Ogamma0 = a_B_c2 * self._Tcmb0 ** 4 / self._critical_density0
 
             # Compute Neutrino temperature
             # The constant in front is (4/11)^1/3 -- see any
@@ -274,7 +258,7 @@ class FLRW(Cosmology, metaclass=ABCMeta):
             # than small numpy arrays).
             if self._massivenu:
                 nu_y = self._massivenu_mass / (kB_evK * self._Tnu0)
-                self._nu_y = nu_y.value
+                self._nu_y = nu_y
                 self._nu_y_list = self._nu_y.tolist()
                 self._Onu0 = self._Ogamma0 * self.nu_relative_density(0)
             else:
@@ -286,7 +270,7 @@ class FLRW(Cosmology, metaclass=ABCMeta):
 
         else:
             self._Ogamma0 = 0.0
-            self._Tnu0 = u.Quantity(0.0, u.K)
+            self._Tnu0 = 0.0
             self._Onu0 = 0.0
 
         # Compute curvature density
@@ -364,25 +348,24 @@ class FLRW(Cosmology, metaclass=ABCMeta):
     @property
     def has_massive_nu(self):
         """ Does this cosmology have at least one massive neutrino species?"""
-        if self._Tnu0.value == 0:
+        if self._Tnu0 == 0:
             return False
         return self._massivenu
 
     @property
     def m_nu(self):
         """ Mass of neutrino species"""
-        if self._Tnu0.value == 0:
+        if self._Tnu0 == 0:
             return None
         if not self._massivenu:
             # Only massless
-            return u.Quantity(np.zeros(self._nmasslessnu), u.eV)
+            return np.zeros(self._nmasslessnu)
         if self._nmasslessnu == 0:
             # Only massive
-            return u.Quantity(self._massivenu_mass, u.eV)
+            return self._massivenu_mass
         # A mix -- the most complicated case
-        numass = np.append(np.zeros(self._nmasslessnu),
-                           self._massivenu_mass.value)
-        return u.Quantity(numass, u.eV)
+        numass = np.append(np.zeros(self._nmasslessnu), self._massivenu_mass)
+        return numass
 
     @property
     def h(self):
@@ -1114,7 +1097,7 @@ class FLRW(Cosmology, metaclass=ABCMeta):
         d : `~astropy.units.Quantity`
           Lookback distance in Mpc
         """
-        return (self.lookback_time(z) * const.c).to(u.Mpc)
+        return self.lookback_time(z) * c_Mpc_Gyr
 
     def age(self, z):
         """ Age of the universe in Gyr at redshift ``z``.
@@ -1316,9 +1299,9 @@ class FLRW(Cosmology, metaclass=ABCMeta):
         sqrtOk0 = sqrt(abs(Ok0))
         dh = self._hubble_distance
         if Ok0 > 0:
-            return dh / sqrtOk0 * np.sinh(sqrtOk0 * dc.value / dh.value)
+            return dh / sqrtOk0 * np.sinh(sqrtOk0 * dc / dh)
         else:
-            return dh / sqrtOk0 * np.sin(sqrtOk0 * dc.value / dh.value)
+            return dh / sqrtOk0 * np.sin(sqrtOk0 * dc / dh)
 
     def angular_diameter_distance(self, z):
         """ Angular diameter distance in Mpc at a given redshift.
@@ -1450,8 +1433,8 @@ class FLRW(Cosmology, metaclass=ABCMeta):
         # Abs is necessary because in certain obscure closed cosmologies
         #  the distance modulus can be negative -- which is okay because
         #  it enters as the square.
-        val = 5. * np.log10(abs(self.luminosity_distance(z).value)) + 25.0
-        return u.Quantity(val, u.mag)
+        val = 5. * np.log10(abs(self.luminosity_distance(z))) + 25.0
+        return val
 
     def comoving_volume(self, z):
         """ Comoving volume in cubic Mpc at redshift ``z``.
@@ -1476,9 +1459,9 @@ class FLRW(Cosmology, metaclass=ABCMeta):
         if Ok0 == 0:
             return 4. / 3. * pi * self.comoving_distance(z) ** 3
 
-        dh = self._hubble_distance.value  # .value for speed
-        dm = self.comoving_transverse_distance(z).value
-        term1 = 4. * pi * dh ** 3 / (2. * Ok0) * u.Mpc ** 3
+        dh = self._hubble_distance
+        dm = self.comoving_transverse_distance(z)
+        term1 = 4. * pi * dh ** 3 / (2. * Ok0)
         term2 = dm / dh * np.sqrt(1 + Ok0 * (dm / dh) ** 2)
         term3 = sqrt(abs(Ok0)) * dm / dh
 
@@ -1509,7 +1492,7 @@ class FLRW(Cosmology, metaclass=ABCMeta):
           each input redshift."""
         dh = self._hubble_distance
         dm = self.comoving_transverse_distance(z)
-        return dh * (dm ** 2.0) / u.Quantity(self.efunc(z), u.steradian)
+        return dh * (dm ** 2.0) / self.efunc(z)
 
     def kpc_comoving_per_arcmin(self, z):
         """ Separation in transverse comoving kpc corresponding to an
@@ -1526,8 +1509,7 @@ class FLRW(Cosmology, metaclass=ABCMeta):
           The distance in comoving kpc corresponding to an arcmin at each
           input redshift.
         """
-        return (self.comoving_transverse_distance(z).to(u.kpc) *
-                arcmin_in_radians / u.arcmin)
+        return self.comoving_transverse_distance(z) * 1e3 * arcmin_in_radians
 
     def kpc_proper_per_arcmin(self, z):
         """ Separation in transverse proper kpc corresponding to an
@@ -1544,8 +1526,7 @@ class FLRW(Cosmology, metaclass=ABCMeta):
           The distance in proper kpc corresponding to an arcmin at each
           input redshift.
         """
-        return (self.angular_diameter_distance(z).to(u.kpc) *
-                arcmin_in_radians / u.arcmin)
+        return self.angular_diameter_distance(z) * 1e3 * arcmin_in_radians
 
     def arcsec_per_kpc_comoving(self, z):
         """ Angular separation in arcsec corresponding to a comoving kpc
@@ -1562,8 +1543,7 @@ class FLRW(Cosmology, metaclass=ABCMeta):
           The angular separation in arcsec corresponding to a comoving kpc
           at each input redshift.
         """
-        return u.arcsec / (self.comoving_transverse_distance(z).to(u.kpc) *
-                           arcsec_in_radians)
+        return 1e-3 / (self.comoving_transverse_distance(z) * arcsec_in_radians)
 
     def arcsec_per_kpc_proper(self, z):
         """ Angular separation in arcsec corresponding to a proper kpc at
@@ -1580,8 +1560,7 @@ class FLRW(Cosmology, metaclass=ABCMeta):
           The angular separation in arcsec corresponding to a proper kpc
           at each input redshift.
         """
-        return u.arcsec / (self.angular_diameter_distance(z).to(u.kpc) *
-                           arcsec_in_radians)
+        return 1e-3 / (self.angular_diameter_distance(z) * arcsec_in_radians)
 
 
 class LambdaCDM(FLRW):
@@ -1638,15 +1617,15 @@ class LambdaCDM(FLRW):
     >>> dc = cosmo.comoving_distance(z)
     """
 
-    def __init__(self, H0, Om0, Ode0, Tcmb0=0, Neff=3.04,
-                 m_nu=u.Quantity(0.0, u.eV), Ob0=None, name=None):
+    def __init__(self, H0, Om0, Ode0, Tcmb0=0, Neff=3.04, m_nu=0.0, Ob0=None,
+                 name=None):
 
         FLRW.__init__(self, H0, Om0, Ode0, Tcmb0, Neff, m_nu, name=name,
                       Ob0=Ob0)
 
         # Please see "Notes about speeding up integrals" for discussion
         # about what is being done here.
-        if self._Tcmb0.value == 0:
+        if self._Tcmb0 == 0:
             self._inv_efunc_scalar = scalar_inv_efuncs.lcdm_inv_efunc_norel
             self._inv_efunc_scalar_args = (self._Om0, self._Ode0, self._Ok0)
             if self._Ok0 == 0:
@@ -2172,8 +2151,8 @@ class FlatLambdaCDM(LambdaCDM):
     >>> dc = cosmo.comoving_distance(z)
     """
 
-    def __init__(self, H0, Om0, Tcmb0=0, Neff=3.04,
-                 m_nu=u.Quantity(0.0, u.eV), Ob0=None, name=None):
+    def __init__(self, H0, Om0, Tcmb0=0, Neff=3.04, m_nu=0.0, Ob0=None,
+                 name=None):
 
         LambdaCDM.__init__(self, H0, Om0, 0.0, Tcmb0, Neff, m_nu, name=name,
                            Ob0=Ob0)
@@ -2183,7 +2162,7 @@ class FlatLambdaCDM(LambdaCDM):
 
         # Please see "Notes about speeding up integrals" for discussion
         # about what is being done here.
-        if self._Tcmb0.value == 0:
+        if self._Tcmb0 == 0:
             self._inv_efunc_scalar = scalar_inv_efuncs.flcdm_inv_efunc_norel
             self._inv_efunc_scalar_args = (self._Om0, self._Ode0)
             # Repeat the optimization reassignments here because the init
@@ -2329,8 +2308,8 @@ class wCDM(FLRW):
     >>> dc = cosmo.comoving_distance(z)
     """
 
-    def __init__(self, H0, Om0, Ode0, w0=-1., Tcmb0=0,
-                 Neff=3.04, m_nu=u.Quantity(0.0, u.eV), Ob0=None, name=None):
+    def __init__(self, H0, Om0, Ode0, w0=-1., Tcmb0=0, Neff=3.04, m_nu=0.0,
+                 Ob0=None, name=None):
 
         FLRW.__init__(self, H0, Om0, Ode0, Tcmb0, Neff, m_nu, name=name,
                       Ob0=Ob0)
@@ -2338,7 +2317,7 @@ class wCDM(FLRW):
 
         # Please see "Notes about speeding up integrals" for discussion
         # about what is being done here.
-        if self._Tcmb0.value == 0:
+        if self._Tcmb0 == 0:
             self._inv_efunc_scalar = scalar_inv_efuncs.wcdm_inv_efunc_norel
             self._inv_efunc_scalar_args = (self._Om0, self._Ode0, self._Ok0,
                                            self._w0)
@@ -2534,8 +2513,8 @@ class FlatwCDM(wCDM):
     >>> dc = cosmo.comoving_distance(z)
     """
 
-    def __init__(self, H0, Om0, w0=-1., Tcmb0=0,
-                 Neff=3.04, m_nu=u.Quantity(0.0, u.eV), Ob0=None, name=None):
+    def __init__(self, H0, Om0, w0=-1., Tcmb0=0, Neff=3.04, m_nu=0.0, Ob0=None,
+                 name=None):
 
         wCDM.__init__(self, H0, Om0, 0.0, w0, Tcmb0, Neff, m_nu,
                       name=name, Ob0=Ob0)
@@ -2545,7 +2524,7 @@ class FlatwCDM(wCDM):
 
         # Please see "Notes about speeding up integrals" for discussion
         # about what is being done here.
-        if self._Tcmb0.value == 0:
+        if self._Tcmb0 == 0:
             self._inv_efunc_scalar = scalar_inv_efuncs.fwcdm_inv_efunc_norel
             self._inv_efunc_scalar_args = (self._Om0, self._Ode0,
                                            self._w0)
@@ -2693,8 +2672,8 @@ class w0waCDM(FLRW):
     >>> dc = cosmo.comoving_distance(z)
     """
 
-    def __init__(self, H0, Om0, Ode0, w0=-1., wa=0., Tcmb0=0,
-                 Neff=3.04, m_nu=u.Quantity(0.0, u.eV), Ob0=None, name=None):
+    def __init__(self, H0, Om0, Ode0, w0=-1., wa=0., Tcmb0=0, Neff=3.04,
+                 m_nu=0.0, Ob0=None, name=None):
 
         FLRW.__init__(self, H0, Om0, Ode0, Tcmb0, Neff, m_nu, name=name,
                       Ob0=Ob0)
@@ -2703,7 +2682,7 @@ class w0waCDM(FLRW):
 
         # Please see "Notes about speeding up integrals" for discussion
         # about what is being done here.
-        if self._Tcmb0.value == 0:
+        if self._Tcmb0 == 0:
             self._inv_efunc_scalar = scalar_inv_efuncs.w0wacdm_inv_efunc_norel
             self._inv_efunc_scalar_args = (self._Om0, self._Ode0, self._Ok0,
                                            self._w0, self._wa)
@@ -2859,8 +2838,8 @@ class Flatw0waCDM(w0waCDM):
     >>> dc = cosmo.comoving_distance(z)
     """
 
-    def __init__(self, H0, Om0, w0=-1., wa=0., Tcmb0=0,
-                 Neff=3.04, m_nu=u.Quantity(0.0, u.eV), Ob0=None, name=None):
+    def __init__(self, H0, Om0, w0=-1., wa=0., Tcmb0=0, Neff=3.04, m_nu=0.0,
+                 Ob0=None, name=None):
 
         w0waCDM.__init__(self, H0, Om0, 0.0, w0=w0, wa=wa, Tcmb0=Tcmb0,
                          Neff=Neff, m_nu=m_nu, name=name, Ob0=Ob0)
@@ -2870,7 +2849,7 @@ class Flatw0waCDM(w0waCDM):
 
         # Please see "Notes about speeding up integrals" for discussion
         # about what is being done here.
-        if self._Tcmb0.value == 0:
+        if self._Tcmb0 == 0:
             self._inv_efunc_scalar = scalar_inv_efuncs.fw0wacdm_inv_efunc_norel
             self._inv_efunc_scalar_args = (self._Om0, self._Ode0,
                                            self._w0, self._wa)
@@ -2967,9 +2946,8 @@ class wpwaCDM(FLRW):
     >>> dc = cosmo.comoving_distance(z)
     """
 
-    def __init__(self, H0, Om0, Ode0, wp=-1., wa=0., zp=0,
-                 Tcmb0=0, Neff=3.04, m_nu=u.Quantity(0.0, u.eV),
-                 Ob0=None, name=None):
+    def __init__(self, H0, Om0, Ode0, wp=-1., wa=0., zp=0, Tcmb0=0, Neff=3.04,
+                 m_nu=0.0, Ob0=None, name=None):
 
         FLRW.__init__(self, H0, Om0, Ode0, Tcmb0, Neff, m_nu, name=name,
                       Ob0=Ob0)
@@ -2980,7 +2958,7 @@ class wpwaCDM(FLRW):
         # Please see "Notes about speeding up integrals" for discussion
         # about what is being done here.
         apiv = 1.0 / (1.0 + self._zp)
-        if self._Tcmb0.value == 0:
+        if self._Tcmb0 == 0:
             self._inv_efunc_scalar = scalar_inv_efuncs.wpwacdm_inv_efunc_norel
             self._inv_efunc_scalar_args = (self._Om0, self._Ode0, self._Ok0,
                                            self._wp, apiv, self._wa)
@@ -3150,9 +3128,8 @@ class w0wzCDM(FLRW):
     >>> dc = cosmo.comoving_distance(z)
     """
 
-    def __init__(self, H0, Om0, Ode0, w0=-1., wz=0., Tcmb0=0,
-                 Neff=3.04, m_nu=u.Quantity(0.0, u.eV), Ob0=None,
-                 name=None):
+    def __init__(self, H0, Om0, Ode0, w0=-1., wz=0., Tcmb0=0, Neff=3.04,
+                 m_nu=0.0, Ob0=None, name=None):
 
         FLRW.__init__(self, H0, Om0, Ode0, Tcmb0, Neff, m_nu, name=name,
                       Ob0=Ob0)
@@ -3161,7 +3138,7 @@ class w0wzCDM(FLRW):
 
         # Please see "Notes about speeding up integrals" for discussion
         # about what is being done here.
-        if self._Tcmb0.value == 0:
+        if self._Tcmb0 == 0:
             self._inv_efunc_scalar = scalar_inv_efuncs.w0wzcdm_inv_efunc_norel
             self._inv_efunc_scalar_args = (self._Om0, self._Ode0, self._Ok0,
                                            self._w0, self._wz)
@@ -3301,17 +3278,14 @@ for key in parameters.available:
     par = getattr(parameters, key)
     if par['flat']:
         cosmo = FlatLambdaCDM(par['H0'], par['Om0'], Tcmb0=par['Tcmb0'],
-                              Neff=par['Neff'],
-                              m_nu=u.Quantity(par['m_nu'], u.eV),
-                              name=key,
+                              Neff=par['Neff'], m_nu=par['m_nu'], name=key,
                               Ob0=par['Ob0'])
         docstr = "{} instance of FlatLambdaCDM cosmology\n\n(from {})"
         cosmo.__doc__ = docstr.format(key, par['reference'])
     else:
         cosmo = LambdaCDM(par['H0'], par['Om0'], par['Ode0'],
                           Tcmb0=par['Tcmb0'], Neff=par['Neff'],
-                          m_nu=u.Quantity(par['m_nu'], u.eV), name=key,
-                          Ob0=par['Ob0'])
+                          m_nu=par['m_nu'], name=key, Ob0=par['Ob0'])
         docstr = "{} instance of LambdaCDM cosmology\n\n(from {})"
         cosmo.__doc__ = docstr.format(key, par['reference'])
     setattr(sys.modules[__name__], key, cosmo)
