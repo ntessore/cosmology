@@ -12,9 +12,6 @@ from . import scalar_inv_efuncs
 
 from astropy import constants as const
 from astropy import units as u
-from astropy.utils import isiterable
-from astropy.utils.state import ScienceState
-from astropy.utils.exceptions import AstropyDeprecationWarning
 
 from . import parameters
 
@@ -78,6 +75,15 @@ arcmin_in_radians = pi / (60. * 180)
 a_B_c2 = 4e-3 * const.sigma_sb.value / const.c.value ** 3
 # Boltzmann constant in eV / K
 kB_evK = const.k_B.to(u.eV / u.K)
+
+
+def isiterable(obj):
+    try:
+        iter(obj)
+    except TypeError:
+        return False
+    else:
+        return True
 
 
 class CosmologyError(Exception):
@@ -431,7 +437,7 @@ class FLRW(Cosmology, metaclass=ABCMeta):
         To make a copy of the Planck13 cosmology with a different Omega_m
         and a new name:
 
-        >>> from astropy.cosmology import Planck13
+        >>> from cosmology import Planck13
         >>> newcos = Planck13.clone(name="Modified Planck 2013", Om0=0.35)
         """
 
@@ -1624,7 +1630,7 @@ class LambdaCDM(FLRW):
 
     Examples
     --------
-    >>> from astropy.cosmology import LambdaCDM
+    >>> from cosmology import LambdaCDM
     >>> cosmo = LambdaCDM(H0=70, Om0=0.3, Ode0=0.7)
 
     The comoving distance in Mpc at redshift z:
@@ -2158,7 +2164,7 @@ class FlatLambdaCDM(LambdaCDM):
 
     Examples
     --------
-    >>> from astropy.cosmology import FlatLambdaCDM
+    >>> from cosmology import FlatLambdaCDM
     >>> cosmo = FlatLambdaCDM(H0=70, Om0=0.3)
 
     The comoving distance in Mpc at redshift z:
@@ -2315,7 +2321,7 @@ class wCDM(FLRW):
 
     Examples
     --------
-    >>> from astropy.cosmology import wCDM
+    >>> from cosmology import wCDM
     >>> cosmo = wCDM(H0=70, Om0=0.3, Ode0=0.7, w0=-0.9)
 
     The comoving distance in Mpc at redshift z:
@@ -2520,7 +2526,7 @@ class FlatwCDM(wCDM):
 
     Examples
     --------
-    >>> from astropy.cosmology import FlatwCDM
+    >>> from cosmology import FlatwCDM
     >>> cosmo = FlatwCDM(H0=70, Om0=0.3, w0=-0.9)
 
     The comoving distance in Mpc at redshift z:
@@ -2679,7 +2685,7 @@ class w0waCDM(FLRW):
 
     Examples
     --------
-    >>> from astropy.cosmology import w0waCDM
+    >>> from cosmology import w0waCDM
     >>> cosmo = w0waCDM(H0=70, Om0=0.3, Ode0=0.7, w0=-0.9, wa=0.2)
 
     The comoving distance in Mpc at redshift z:
@@ -2845,7 +2851,7 @@ class Flatw0waCDM(w0waCDM):
 
     Examples
     --------
-    >>> from astropy.cosmology import Flatw0waCDM
+    >>> from cosmology import Flatw0waCDM
     >>> cosmo = Flatw0waCDM(H0=70, Om0=0.3, w0=-0.9, wa=0.2)
 
     The comoving distance in Mpc at redshift z:
@@ -2953,7 +2959,7 @@ class wpwaCDM(FLRW):
 
     Examples
     --------
-    >>> from astropy.cosmology import wpwaCDM
+    >>> from cosmology import wpwaCDM
     >>> cosmo = wpwaCDM(H0=70, Om0=0.3, Ode0=0.7, wp=-0.9, wa=0.2, zp=0.4)
 
     The comoving distance in Mpc at redshift z:
@@ -3136,7 +3142,7 @@ class w0wzCDM(FLRW):
 
     Examples
     --------
-    >>> from astropy.cosmology import w0wzCDM
+    >>> from cosmology import w0wzCDM
     >>> cosmo = w0wzCDM(H0=70, Om0=0.3, Ode0=0.7, w0=-0.9, wz=0.2)
 
     The comoving distance in Mpc at redshift z:
@@ -3319,11 +3325,11 @@ del key, par, cosmo
 #########################################################################
 
 
-class default_cosmology(ScienceState):
+class default_cosmology:
     """
     The default cosmology to use.  To change it::
 
-        >>> from astropy.cosmology import default_cosmology, WMAP7
+        >>> from cosmology import default_cosmology, WMAP7
         >>> with default_cosmology.set(WMAP7):
         ...     # WMAP7 cosmology in effect
         ...     pass
@@ -3335,6 +3341,46 @@ class default_cosmology(ScienceState):
         ...     pass
     """
     _value = 'Planck18'
+
+    def __init__(self):
+        raise RuntimeError(
+            "This class is a singleton.  Do not instantiate.")
+
+    @classmethod
+    def get(cls):
+        """
+        Get the current default cosmology value.
+        """
+        return cls.validate(cls._value)
+
+    @classmethod
+    def set(cls, value):
+        """
+        Set the current default cosmology value.
+        """
+        class _Context:
+            def __init__(self, parent, value):
+                self._value = value
+                self._parent = parent
+
+            def __enter__(self):
+                pass
+
+            def __exit__(self, type, value, tb):
+                self._parent._value = self._value
+
+            def __repr__(self):
+                # Ensure we have a single-line repr, just in case our
+                # value is not something simple like a string.
+                value_repr, lb, _ = repr(self._parent._value).partition('\n')
+                if lb:
+                    value_repr += '...'
+                return (f'<default_cosmology {self._parent.__name__}: {value_repr}>')
+
+        ctx = _Context(cls, cls._value)
+        value = cls.validate(value)
+        cls._value = value
+        return ctx
 
     @staticmethod
     def get_cosmology_from_string(arg):
@@ -3358,7 +3404,7 @@ class default_cosmology(ScienceState):
         if isinstance(value, str):
             if value == 'Planck18_arXiv_v2':
                 warnings.warn(f"{value} is deprecated in astropy 4.2, use Planck18 instead",
-                              AstropyDeprecationWarning)
+                              warnings.DeprecationWarning)
             return cls.get_cosmology_from_string(value)
         elif isinstance(value, Cosmology):
             return value

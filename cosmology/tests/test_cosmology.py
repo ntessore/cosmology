@@ -5,7 +5,7 @@ from io import StringIO
 import pytest
 import numpy as np
 
-from astropy.cosmology import core, funcs
+from cosmology import core, funcs
 from astropy.units import allclose
 from astropy import constants as const
 from astropy import units as u

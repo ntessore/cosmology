@@ -1,6 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """
-Convenience functions for `astropy.cosmology`.
+Convenience functions for `cosmology`.
 """
 
 import warnings
@@ -66,7 +66,7 @@ def z_at_value(func, fval, zmin=1e-8, zmax=1000, ztol=1e-8, maxfun=500):
     in a Planck13 cosmology, you could do the following:
 
     >>> import astropy.units as u
-    >>> from astropy.cosmology import Planck13, z_at_value
+    >>> from cosmology import Planck13, z_at_value
 
     Generate 10^6 distance moduli between 24 and 43 for which we
     want to find the corresponding redshifts:
@@ -90,7 +90,7 @@ def z_at_value(func, fval, zmin=1e-8, zmax=1000, ztol=1e-8, maxfun=500):
     Examples
     --------
     >>> import astropy.units as u
-    >>> from astropy.cosmology import Planck13, z_at_value
+    >>> from cosmology import Planck13, z_at_value
 
     The age and lookback time are monotonic with redshift, and so a
     unique solution can be found:
