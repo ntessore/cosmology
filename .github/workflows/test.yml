@@ -1,0 +1,42 @@
+name: Test
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    branches:
+    - master
+jobs:
+  test:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - name: Linux
+          os: ubuntu-latest
+          python: 3.9
+          toxenv: test
+        - name: macOS
+          os: macos-latest
+          python: 3.9
+          toxenv: test
+        - name: Windows
+          os: windows-latest
+          python: 3.9
+          toxenv: test
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+    - name: Install Python ${{ matrix.python }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python }}
+    - name: Install Dependencies
+      run: |
+        pip install tox
+    - name: Run Tests
+      run: |
+        tox -e ${{ matrix.toxenv }} ${{ matrix.toxargs }} -- ${{ matrix.toxposargs }}
