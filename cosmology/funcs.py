@@ -33,7 +33,7 @@ def z_at_value(func, fval, zmin=1e-8, zmax=1000, ztol=1e-8, maxfun=500):
     ----------
     func : function or method
        A function that takes a redshift as input.
-    fval : astropy.Quantity instance
+    fval : float
        The value of ``func(z)``.
     zmin : float, optional
        The lower search limit for ``z``.  Beware of divergences
@@ -64,13 +64,12 @@ def z_at_value(func, fval, zmin=1e-8, zmax=1000, ztol=1e-8, maxfun=500):
     the redshifts corresponding to 10^6 values of the distance modulus
     in a Planck13 cosmology, you could do the following:
 
-    >>> import astropy.units as u
     >>> from cosmology import Planck13, z_at_value
 
     Generate 10^6 distance moduli between 24 and 43 for which we
     want to find the corresponding redshifts:
 
-    >>> Dvals = (24 + np.random.rand(1000000) * 20) * u.mag
+    >>> Dvals = (24 + np.random.rand(1000000) * 20)
 
     Make a grid of distance moduli covering the redshift range we
     need using 50 equally log-spaced values between zmin and
@@ -88,13 +87,12 @@ def z_at_value(func, fval, zmin=1e-8, zmax=1000, ztol=1e-8, maxfun=500):
 
     Examples
     --------
-    >>> import astropy.units as u
     >>> from cosmology import Planck13, z_at_value
 
     The age and lookback time are monotonic with redshift, and so a
     unique solution can be found:
 
-    >>> z_at_value(Planck13.age, 2 * u.Gyr)  # doctest: +FLOAT_CMP
+    >>> z_at_value(Planck13.age, 2.)  # doctest: +FLOAT_CMP
     3.19812268
 
     The angular diameter is not monotonic however, and there are two
@@ -102,10 +100,10 @@ def z_at_value(func, fval, zmin=1e-8, zmax=1000, ztol=1e-8, maxfun=500):
     to find the one you're interested in:
 
     >>> z_at_value(Planck13.angular_diameter_distance,
-    ...            1500 * u.Mpc, zmax=1.5)  # doctest: +FLOAT_CMP
+    ...            1500, zmax=1.5)  # doctest: +FLOAT_CMP
     0.6812769577
     >>> z_at_value(Planck13.angular_diameter_distance,
-    ...            1500 * u.Mpc, zmin=2.5)  # doctest: +FLOAT_CMP
+    ...            1500, zmin=2.5)  # doctest: +FLOAT_CMP
     3.7914913242
 
     Also note that the luminosity distance and distance modulus (two

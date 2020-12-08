@@ -98,8 +98,8 @@ class FLRW(Cosmology, metaclass=ABCMeta):
     Parameters
     ----------
 
-    H0 : float or scalar `~astropy.units.Quantity`
-        Hubble constant at z = 0.  If a float, must be in [km/sec/Mpc]
+    H0 : float
+        Hubble constant at z = 0 in km s-1 Mpc-1.
 
     Om0 : float
         Omega matter: density of non-relativistic matter in units of the
@@ -110,20 +110,19 @@ class FLRW(Cosmology, metaclass=ABCMeta):
         Omega dark energy: density of dark energy in units of the critical
         density at z=0.
 
-    Tcmb0 : float or scalar `~astropy.units.Quantity`, optional
-        Temperature of the CMB z=0. If a float, must be in [K].
-        Default: 0 [K]. Setting this to zero will turn off both photons
-        and neutrinos (even massive ones).
+    Tcmb0 : float, optional
+        Temperature of the CMB z=0 in K. Default: 0. Setting this to zero will
+        turn off both photons and neutrinos (even massive ones).
 
     Neff : float, optional
         Effective number of Neutrino species. Default 3.04.
 
-    m_nu : `~astropy.units.Quantity`, optional
-        Mass of each neutrino species. If this is a scalar Quantity, then all
+    m_nu : float or list of floats, optional
+        Mass of each neutrino species in eV. If this is a scalar, then all
         neutrino species are assumed to have that mass. Otherwise, the mass of
         each species. The actual number of neutrino species (and hence the
         number of elements of m_nu if it is not scalar) must be the floor of
-        Neff. Typically this means you should provide three neutrino masses
+        Neff.  Typically this means you should provide three neutrino masses
         unless you are considering something like a sterile neutrino.
 
     Ob0 : float or None, optional
@@ -301,7 +300,7 @@ class FLRW(Cosmology, metaclass=ABCMeta):
 
     @property
     def H0(self):
-        """ Return the Hubble constant as an `~astropy.units.Quantity` at z=0"""
+        """ Return the Hubble constant in km s-1 Mpc-1 at z=0"""
         return self._H0
 
     @property
@@ -332,12 +331,12 @@ class FLRW(Cosmology, metaclass=ABCMeta):
 
     @property
     def Tcmb0(self):
-        """ Temperature of the CMB as `~astropy.units.Quantity` at z=0"""
+        """ Temperature of the CMB in K at z=0"""
         return self._Tcmb0
 
     @property
     def Tnu0(self):
-        """ Temperature of the neutrino background as `~astropy.units.Quantity` at z=0"""
+        """ Temperature of the neutrino background in eV at z=0"""
         return self._Tnu0
 
     @property
@@ -354,7 +353,7 @@ class FLRW(Cosmology, metaclass=ABCMeta):
 
     @property
     def m_nu(self):
-        """ Mass of neutrino species"""
+        """ Mass of neutrino species in eV"""
         if self._Tnu0 == 0:
             return None
         if not self._massivenu:
@@ -369,22 +368,22 @@ class FLRW(Cosmology, metaclass=ABCMeta):
 
     @property
     def h(self):
-        """ Dimensionless Hubble constant: h = H_0 / 100 [km/sec/Mpc]"""
+        """ Dimensionless Hubble constant: h = H_0 / 100 km s-1 Mpc-1"""
         return self._h
 
     @property
     def hubble_time(self):
-        """ Hubble time as `~astropy.units.Quantity`"""
+        """ Hubble time in Gyr"""
         return self._hubble_time
 
     @property
     def hubble_distance(self):
-        """ Hubble distance as `~astropy.units.Quantity`"""
+        """ Hubble distance in Mpc"""
         return self._hubble_distance
 
     @property
     def critical_density0(self):
-        """ Critical density as `~astropy.units.Quantity` at z=0"""
+        """ Critical density in g cm-3 at z=0"""
         return self._critical_density0
 
     @property
@@ -675,7 +674,7 @@ class FLRW(Cosmology, metaclass=ABCMeta):
 
         Returns
         -------
-        Tcmb : `~astropy.units.Quantity`
+        Tcmb : array_like
           The temperature of the CMB in K.
         """
 
@@ -693,7 +692,7 @@ class FLRW(Cosmology, metaclass=ABCMeta):
 
         Returns
         -------
-        Tnu : `~astropy.units.Quantity`
+        Tnu : array_like
           The temperature of the cosmic neutrino background in K.
         """
 
@@ -984,7 +983,7 @@ class FLRW(Cosmology, metaclass=ABCMeta):
         return zp1 ** 2 * self.inv_efunc(z)
 
     def H(self, z):
-        """ Hubble parameter (km/s/Mpc) at redshift ``z``.
+        """ Hubble parameter in km s-1 Mpc-1 at redshift ``z``.
 
         Parameters
         ----------
@@ -993,8 +992,8 @@ class FLRW(Cosmology, metaclass=ABCMeta):
 
         Returns
         -------
-        H : `~astropy.units.Quantity`
-          Hubble parameter at each input redshift.
+        H : array_like
+          Hubble parameter in km s-1 Mpc-1 at each input redshift.
         """
 
         return self._H0 * self.efunc(z)
@@ -1033,7 +1032,7 @@ class FLRW(Cosmology, metaclass=ABCMeta):
 
         Returns
         -------
-        t : `~astropy.units.Quantity`
+        t : array_like
           Lookback time in Gyr to each input redshift.
 
         See Also
@@ -1055,7 +1054,7 @@ class FLRW(Cosmology, metaclass=ABCMeta):
 
         Returns
         -------
-        t : `~astropy.units.Quantity`
+        t : array_like
           Lookback time in Gyr to each input redshift.
         """
         return self._integral_lookback_time(z)
@@ -1073,7 +1072,7 @@ class FLRW(Cosmology, metaclass=ABCMeta):
 
         Returns
         -------
-        t : `~astropy.units.Quantity`
+        t : array_like
           Lookback time in Gyr to each input redshift.
         """
         from scipy.integrate import quad
@@ -1094,7 +1093,7 @@ class FLRW(Cosmology, metaclass=ABCMeta):
 
         Returns
         -------
-        d : `~astropy.units.Quantity`
+        d : array_like
           Lookback distance in Mpc
         """
         return self.lookback_time(z) * c_Mpc_Gyr
@@ -1109,7 +1108,7 @@ class FLRW(Cosmology, metaclass=ABCMeta):
 
         Returns
         -------
-        t : `~astropy.units.Quantity`
+        t : array_like
           The age of the universe in Gyr at each input redshift.
 
         See Also
@@ -1130,7 +1129,7 @@ class FLRW(Cosmology, metaclass=ABCMeta):
 
         Returns
         -------
-        t : `~astropy.units.Quantity`
+        t : array_like
           The age of the universe in Gyr at each input redshift.
         """
         return self._integral_age(z)
@@ -1147,7 +1146,7 @@ class FLRW(Cosmology, metaclass=ABCMeta):
 
         Returns
         -------
-        t : `~astropy.units.Quantity`
+        t : array_like
           The age of the universe in Gyr at each input redshift.
 
         See Also
@@ -1160,7 +1159,7 @@ class FLRW(Cosmology, metaclass=ABCMeta):
         return self._hubble_time * vectorize_if_needed(f, z)
 
     def critical_density(self, z):
-        """ Critical density in grams per cubic cm at redshift ``z``.
+        """ Critical density in g cm-3 at redshift ``z``.
 
         Parameters
         ----------
@@ -1169,8 +1168,8 @@ class FLRW(Cosmology, metaclass=ABCMeta):
 
         Returns
         -------
-        rho : `~astropy.units.Quantity`
-          Critical density in g/cm^3 at each input redshift.
+        rho : array_like
+          Critical density in g cm-3 at each input redshift.
         """
 
         return self._critical_density0 * (self.efunc(z)) ** 2
@@ -1190,7 +1189,7 @@ class FLRW(Cosmology, metaclass=ABCMeta):
 
         Returns
         -------
-        d : `~astropy.units.Quantity`
+        d : array_like
           Comoving distance in Mpc to each input redshift.
         """
 
@@ -1211,7 +1210,7 @@ class FLRW(Cosmology, metaclass=ABCMeta):
 
         Returns
         -------
-        d : `~astropy.units.Quantity`
+        d : array_like
           Comoving distance in Mpc between each input redshift.
         """
         return self._integral_comoving_distance_z1z2(z1, z2)
@@ -1231,7 +1230,7 @@ class FLRW(Cosmology, metaclass=ABCMeta):
 
         Returns
         -------
-        d : `~astropy.units.Quantity`
+        d : array_like
           Comoving distance in Mpc between each input redshift.
         """
 
@@ -1255,7 +1254,7 @@ class FLRW(Cosmology, metaclass=ABCMeta):
 
         Returns
         -------
-        d : `~astropy.units.Quantity`
+        d : array_like
           Comoving transverse distance in Mpc at each input redshift.
 
         Notes
@@ -1282,7 +1281,7 @@ class FLRW(Cosmology, metaclass=ABCMeta):
 
         Returns
         -------
-        d : `~astropy.units.Quantity`
+        d : array_like
           Comoving transverse distance in Mpc between input redshift.
 
         Notes
@@ -1320,7 +1319,7 @@ class FLRW(Cosmology, metaclass=ABCMeta):
 
         Returns
         -------
-        d : `~astropy.units.Quantity`
+        d : array_like
           Angular diameter distance in Mpc at each input redshift.
         """
 
@@ -1343,7 +1342,7 @@ class FLRW(Cosmology, metaclass=ABCMeta):
 
         Returns
         -------
-        d : `~astropy.units.Quantity`
+        d : array_like
           Luminosity distance in Mpc at each input redshift.
 
         See Also
@@ -1361,18 +1360,18 @@ class FLRW(Cosmology, metaclass=ABCMeta):
         return (1. + z) * self.comoving_transverse_distance(z)
 
     def angular_diameter_distance_z1z2(self, z1, z2):
-        """ Angular diameter distance between objects at 2 redshifts.
+        """ Angular diameter distance in Mpc between objects at 2 redshifts.
         Useful for gravitational lensing.
 
         Parameters
         ----------
-        z1, z2 : array_like, shape (N,)
+        z1, z2 : array_like
           Input redshifts. z2 must be large than z1.
 
         Returns
         -------
-        d : `~astropy.units.Quantity`, shape (N,) or single if input scalar
-          The angular diameter distance between each input redshift
+        d : array_like
+          The angular diameter distance in Mpc between each input redshift
           pair.
 
         """
@@ -1395,7 +1394,7 @@ class FLRW(Cosmology, metaclass=ABCMeta):
 
         Returns
         -------
-        d : float or ndarray
+        d : array_like
           Absorption distance (dimensionless) at each input redshift.
 
         References
@@ -1421,8 +1420,8 @@ class FLRW(Cosmology, metaclass=ABCMeta):
 
         Returns
         -------
-        distmod : `~astropy.units.Quantity`
-          Distance modulus at each input redshift, in magnitudes
+        distmod : array_like
+          Distance modulus at each input redshift.
 
         See Also
         --------
@@ -1437,12 +1436,11 @@ class FLRW(Cosmology, metaclass=ABCMeta):
         return val
 
     def comoving_volume(self, z):
-        """ Comoving volume in cubic Mpc at redshift ``z``.
+        """ Comoving volume in Mpc3 at redshift ``z``.
 
         This is the volume of the universe encompassed by redshifts less
         than ``z``. For the case of omega_k = 0 it is a sphere of radius
-        `comoving_distance` but it is less intuitive
-        if omega_k is not 0.
+        `comoving_distance` but it is less intuitive if omega_k is not 0.
 
         Parameters
         ----------
@@ -1451,8 +1449,8 @@ class FLRW(Cosmology, metaclass=ABCMeta):
 
         Returns
         -------
-        V : `~astropy.units.Quantity`
-          Comoving volume in :math:`Mpc^3` at each input redshift.
+        V : array_like
+          Comoving volume in Mpc3 at each input redshift.
         """
 
         Ok0 = self._Ok0
@@ -1487,9 +1485,8 @@ class FLRW(Cosmology, metaclass=ABCMeta):
 
         Returns
         -------
-        dV : `~astropy.units.Quantity`
-          Differential comoving volume per redshift per steradian at
-          each input redshift."""
+        dV : array_like
+          Differential comoving dV/dz in Mpc3 sr-1 at each input redshift."""
         dh = self._hubble_distance
         dm = self.comoving_transverse_distance(z)
         return dh * (dm ** 2.0) / self.efunc(z)
@@ -1505,9 +1502,8 @@ class FLRW(Cosmology, metaclass=ABCMeta):
 
         Returns
         -------
-        d : `~astropy.units.Quantity`
-          The distance in comoving kpc corresponding to an arcmin at each
-          input redshift.
+        d : array_like
+          The distance in comoving kpc arcmin-1 at each input redshift.
         """
         return self.comoving_transverse_distance(z) * 1e3 * arcmin_in_radians
 
@@ -1522,9 +1518,8 @@ class FLRW(Cosmology, metaclass=ABCMeta):
 
         Returns
         -------
-        d : `~astropy.units.Quantity`
-          The distance in proper kpc corresponding to an arcmin at each
-          input redshift.
+        d : array_like
+          The distance in proper kpc arcmin-1 at each input redshift.
         """
         return self.angular_diameter_distance(z) * 1e3 * arcmin_in_radians
 
@@ -1539,9 +1534,9 @@ class FLRW(Cosmology, metaclass=ABCMeta):
 
         Returns
         -------
-        theta : `~astropy.units.Quantity`
-          The angular separation in arcsec corresponding to a comoving kpc
-          at each input redshift.
+        theta : array_like
+          The angular separation in arcsec (comoving kpc)-1 at each input
+          redshift.
         """
         return 1e-3 / (self.comoving_transverse_distance(z) * arcsec_in_radians)
 
@@ -1556,9 +1551,9 @@ class FLRW(Cosmology, metaclass=ABCMeta):
 
         Returns
         -------
-        theta : `~astropy.units.Quantity`
-          The angular separation in arcsec corresponding to a proper kpc
-          at each input redshift.
+        theta : array_like
+          The angular separation in arcsec (proper kpc)-1 at each input
+          redshift.
         """
         return 1e-3 / (self.angular_diameter_distance(z) * arcsec_in_radians)
 
@@ -1571,8 +1566,8 @@ class LambdaCDM(FLRW):
     Parameters
     ----------
 
-    H0 : float or `~astropy.units.Quantity`
-        Hubble constant at z = 0.  If a float, must be in [km/sec/Mpc]
+    H0 : float
+        Hubble constant at z = 0 in km s-1 Mpc-1.
 
     Om0 : float
         Omega matter: density of non-relativistic matter in units of the
@@ -1582,20 +1577,19 @@ class LambdaCDM(FLRW):
         Omega dark energy: density of the cosmological constant in units of
         the critical density at z=0.
 
-    Tcmb0 : float or scalar `~astropy.units.Quantity`, optional
-        Temperature of the CMB z=0. If a float, must be in [K].
-        Default: 0 [K]. Setting this to zero will turn off both photons
-        and neutrinos (even massive ones).
+    Tcmb0 : float, optional
+        Temperature of the CMB z=0 in K.  Default: 0. Setting this to zero will
+        turn off both photons and neutrinos (even massive ones).
 
     Neff : float, optional
         Effective number of Neutrino species. Default 3.04.
 
-    m_nu : `~astropy.units.Quantity`, optional
-        Mass of each neutrino species. If this is a scalar Quantity, then all
+    m_nu : float or list of floats, optional
+        Mass of each neutrino species in eV. If this is a scalar, then all
         neutrino species are assumed to have that mass. Otherwise, the mass of
         each species. The actual number of neutrino species (and hence the
         number of elements of m_nu if it is not scalar) must be the floor of
-        Neff. Typically this means you should provide three neutrino masses
+        Neff.  Typically this means you should provide three neutrino masses
         unless you are considering something like a sterile neutrino.
 
     Ob0 : float or None, optional
@@ -1677,7 +1671,7 @@ class LambdaCDM(FLRW):
 
         Returns
         -------
-        w : ndarray, or float if input scalar
+        w : array_like
           The dark energy equation of state
 
         Notes
@@ -1704,7 +1698,7 @@ class LambdaCDM(FLRW):
 
         Returns
         -------
-        I : ndarray, or float if input scalar
+        I : array_like
           The scaling of the energy density of dark energy with redshift.
 
         Notes
@@ -1738,7 +1732,7 @@ class LambdaCDM(FLRW):
 
         Returns
         -------
-        d : `~astropy.units.Quantity`
+        d : array_like
           Comoving distance in Mpc between each input redshift.
         """
         from scipy.special import ellipkinc
@@ -1805,12 +1799,12 @@ class LambdaCDM(FLRW):
 
         Parameters
         ----------
-        z1, z2 : array_like, shape (N,)
+        z1, z2 : array_like
           Input redshifts.  Must be 1D or scalar.
 
         Returns
         -------
-        d : `~astropy.units.Quantity`
+        d : array_like
           Comoving distance in Mpc between each input redshift.
         """
         if isiterable(z1):
@@ -1834,12 +1828,12 @@ class LambdaCDM(FLRW):
 
         Parameters
         ----------
-        z1, z2 : array_like, shape (N,)
+        z1, z2 : array_like
           Input redshifts.  Must be 1D or scalar.
 
         Returns
         -------
-        d : `~astropy.units.Quantity`
+        d : array_like
           Comoving distance in Mpc between each input redshift.
         """
         if isiterable(z1):
@@ -1872,7 +1866,7 @@ class LambdaCDM(FLRW):
 
         Returns
         -------
-        d : `~astropy.units.Quantity`
+        d : array_like
           Comoving distance in Mpc between each input redshift.
         """
         if isiterable(z1):
@@ -1914,7 +1908,7 @@ class LambdaCDM(FLRW):
 
         Returns
         -------
-        t : `~astropy.units.Quantity`
+        t : array_like
           The age of the universe in Gyr at each input redshift.
         """
         return self._hubble_time * inf_like(z)
@@ -1933,7 +1927,7 @@ class LambdaCDM(FLRW):
 
         Returns
         -------
-        t : `~astropy.units.Quantity`
+        t : array_like
           The age of the universe in Gyr at each input redshift.
         """
         if isiterable(z):
@@ -1955,7 +1949,7 @@ class LambdaCDM(FLRW):
 
         Returns
         -------
-        t : `~astropy.units.Quantity`
+        t : array_like
           The age of the universe in Gyr at each input redshift.
         """
         if isiterable(z):
@@ -1986,7 +1980,7 @@ class LambdaCDM(FLRW):
 
         Returns
         -------
-        t : `~astropy.units.Quantity`
+        t : array_like
           Lookback time in Gyr to each input redshift.
         """
         return self._EdS_age(0) - self._EdS_age(z)
@@ -2009,7 +2003,7 @@ class LambdaCDM(FLRW):
 
         Returns
         -------
-        t : `~astropy.units.Quantity`
+        t : array_like
           Lookback time in Gyr to each input redshift.
         """
         if isiterable(z):
@@ -2034,7 +2028,7 @@ class LambdaCDM(FLRW):
 
         Returns
         -------
-        t : `~astropy.units.Quantity`
+        t : array_like
           Lookback time in Gyr to each input redshift.
         """
         return self._flat_age(0) - self._flat_age(z)
@@ -2049,7 +2043,7 @@ class LambdaCDM(FLRW):
 
         Returns
         -------
-        E : ndarray, or float if input scalar
+        E : array_like
           The redshift scaling of the Hubble constant.
 
         Notes
@@ -2081,13 +2075,12 @@ class LambdaCDM(FLRW):
 
         Returns
         -------
-        E : ndarray, or float if input scalar
+        E : array_like
           The inverse redshift scaling of the Hubble constant.
 
         Notes
         -----
-        The return value, E, is defined such that :math:`H_z = H_0 /
-        E`.
+        The return value, E, is defined such that :math:`H_z = H_0 / E`.
         """
 
         if isiterable(z):
@@ -2109,27 +2102,26 @@ class FlatLambdaCDM(LambdaCDM):
 
     Parameters
     ----------
-    H0 : float or `~astropy.units.Quantity`
-        Hubble constant at z = 0.  If a float, must be in [km/sec/Mpc]
+    H0 : float
+        Hubble constant at z = 0 in km s-1 Mpc-1.
 
     Om0 : float
         Omega matter: density of non-relativistic matter in units of the
         critical density at z=0.
 
-    Tcmb0 : float or scalar `~astropy.units.Quantity`, optional
-        Temperature of the CMB z=0. If a float, must be in [K].
-        Default: 0 [K]. Setting this to zero will turn off both photons
-        and neutrinos (even massive ones).
+    Tcmb0 : float, optional
+        Temperature of the CMB z=0 in K. Default: 0. Setting this to zero will
+        turn off both photons and neutrinos (even massive ones).
 
     Neff : float, optional
         Effective number of Neutrino species. Default 3.04.
 
-    m_nu : `~astropy.units.Quantity`, optional
-        Mass of each neutrino species. If this is a scalar Quantity, then all
+    m_nu : float or list of floats, optional
+        Mass of each neutrino species in eV. If this is a scalar, then all
         neutrino species are assumed to have that mass. Otherwise, the mass of
         each species. The actual number of neutrino species (and hence the
         number of elements of m_nu if it is not scalar) must be the floor of
-        Neff. Typically this means you should provide three neutrino masses
+        Neff.  Typically this means you should provide three neutrino masses
         unless you are considering something like a sterile neutrino.
 
     Ob0 : float or None, optional
@@ -2190,7 +2182,7 @@ class FlatLambdaCDM(LambdaCDM):
 
         Returns
         -------
-        E : ndarray, or float if input scalar
+        E : array_like
           The redshift scaling of the Hubble constant.
 
         Notes
@@ -2222,7 +2214,7 @@ class FlatLambdaCDM(LambdaCDM):
 
         Returns
         -------
-        E : ndarray, or float if input scalar
+        E : array_like
           The inverse redshift scaling of the Hubble constant.
 
         Notes
@@ -2257,8 +2249,8 @@ class wCDM(FLRW):
     Parameters
     ----------
 
-    H0 : float or `~astropy.units.Quantity`
-        Hubble constant at z = 0. If a float, must be in [km/sec/Mpc]
+    H0 : float
+        Hubble constant at z = 0 in km s-1 Mpc-1.
 
     Om0 : float
         Omega matter: density of non-relativistic matter in units of the
@@ -2273,20 +2265,19 @@ class wCDM(FLRW):
         pressure/density for dark energy in units where c=1. A cosmological
         constant has w0=-1.0.
 
-    Tcmb0 : float or scalar `~astropy.units.Quantity`, optional
-        Temperature of the CMB z=0. If a float, must be in [K].
-        Default: 0 [K]. Setting this to zero will turn off both photons
-        and neutrinos (even massive ones).
+    Tcmb0 : float, optional
+        Temperature of the CMB z=0 in K. Default: 0. Setting this to zero will
+        turn off both photons and neutrinos (even massive ones).
 
     Neff : float, optional
         Effective number of Neutrino species. Default 3.04.
 
-    m_nu : `~astropy.units.Quantity`, optional
-        Mass of each neutrino species. If this is a scalar Quantity, then all
+    m_nu : float or list of floats, optional
+        Mass of each neutrino species in eV. If this is a scalar, then all
         neutrino species are assumed to have that mass. Otherwise, the mass of
         each species. The actual number of neutrino species (and hence the
         number of elements of m_nu if it is not scalar) must be the floor of
-        Neff. Typically this means you should provide three neutrino masses
+        Neff.  Typically this means you should provide three neutrino masses
         unless you are considering something like a sterile neutrino.
 
     Ob0 : float or None, optional
@@ -2348,7 +2339,7 @@ class wCDM(FLRW):
 
         Returns
         -------
-        w : ndarray, or float if input scalar
+        w : array_like
           The dark energy equation of state
 
         Notes
@@ -2375,7 +2366,7 @@ class wCDM(FLRW):
 
         Returns
         -------
-        I : ndarray, or float if input scalar
+        I : array_like
           The scaling of the energy density of dark energy with redshift.
 
         Notes
@@ -2399,7 +2390,7 @@ class wCDM(FLRW):
 
         Returns
         -------
-        E : ndarray, or float if input scalar
+        E : array_like
           The redshift scaling of the Hubble constant.
 
         Notes
@@ -2429,7 +2420,7 @@ class wCDM(FLRW):
 
         Returns
         -------
-        E : ndarray, or float if input scalar
+        E : array_like
           The inverse redshift scaling of the Hubble constant.
 
         Notes
@@ -2466,8 +2457,8 @@ class FlatwCDM(wCDM):
     Parameters
     ----------
 
-    H0 : float or `~astropy.units.Quantity`
-        Hubble constant at z = 0. If a float, must be in [km/sec/Mpc]
+    H0 : float
+        Hubble constant at z = 0 in km s-1 Mpc-1.
 
     Om0 : float
         Omega matter: density of non-relativistic matter in units of the
@@ -2478,20 +2469,19 @@ class FlatwCDM(wCDM):
         pressure/density for dark energy in units where c=1. A cosmological
         constant has w0=-1.0.
 
-    Tcmb0 : float or scalar `~astropy.units.Quantity`, optional
-        Temperature of the CMB z=0. If a float, must be in [K].
-        Default: 0 [K]. Setting this to zero will turn off both photons
-        and neutrinos (even massive ones).
+    Tcmb0 : float, optional
+        Temperature of the CMB z=0 in K. Default: 0. Setting this to zero will
+        turn off both photons and neutrinos (even massive ones).
 
     Neff : float, optional
         Effective number of Neutrino species. Default 3.04.
 
-    m_nu : `~astropy.units.Quantity`, optional
-        Mass of each neutrino species. If this is a scalar Quantity, then all
+    m_nu : float or list of floats, optional
+        Mass of each neutrino species in eV. If this is a scalar, then all
         neutrino species are assumed to have that mass. Otherwise, the mass of
         each species. The actual number of neutrino species (and hence the
         number of elements of m_nu if it is not scalar) must be the floor of
-        Neff. Typically this means you should provide three neutrino masses
+        Neff.  Typically this means you should provide three neutrino masses
         unless you are considering something like a sterile neutrino.
 
     Ob0 : float or None, optional
@@ -2550,7 +2540,7 @@ class FlatwCDM(wCDM):
 
         Returns
         -------
-        E : ndarray, or float if input scalar
+        E : array_like
           The redshift scaling of the Hubble constant.
 
         Notes
@@ -2580,7 +2570,7 @@ class FlatwCDM(wCDM):
 
         Returns
         -------
-        E : ndarray, or float if input scalar
+        E : array_like
           The inverse redshift scaling of the Hubble constant.
 
         Notes
@@ -2618,8 +2608,8 @@ class w0waCDM(FLRW):
 
     Parameters
     ----------
-    H0 : float or `~astropy.units.Quantity`
-        Hubble constant at z = 0. If a float, must be in [km/sec/Mpc]
+    H0 : float
+        Hubble constant at z = 0 in km s-1 Mpc-1.
 
     Om0 : float
         Omega matter: density of non-relativistic matter in units of the
@@ -2637,20 +2627,19 @@ class w0waCDM(FLRW):
         Negative derivative of the dark energy equation of state with respect
         to the scale factor. A cosmological constant has w0=-1.0 and wa=0.0.
 
-    Tcmb0 : float or scalar `~astropy.units.Quantity`, optional
-        Temperature of the CMB z=0. If a float, must be in [K].
-        Default: 0 [K]. Setting this to zero will turn off both photons
-        and neutrinos (even massive ones).
+    Tcmb0 : float, optional
+        Temperature of the CMB z=0 in K. Default: 0. Setting this to zero will
+        turn off both photons and neutrinos (even massive ones).
 
     Neff : float, optional
         Effective number of Neutrino species. Default 3.04.
 
-    m_nu : `~astropy.units.Quantity`, optional
-        Mass of each neutrino species. If this is a scalar Quantity, then all
+    m_nu : float or list of floats, optional
+        Mass of each neutrino species in eV. If this is a scalar, then all
         neutrino species are assumed to have that mass. Otherwise, the mass of
         each species. The actual number of neutrino species (and hence the
         number of elements of m_nu if it is not scalar) must be the floor of
-        Neff. Typically this means you should provide three neutrino masses
+        Neff.  Typically this means you should provide three neutrino masses
         unless you are considering something like a sterile neutrino.
 
     Ob0 : float or None, optional
@@ -2719,7 +2708,7 @@ class w0waCDM(FLRW):
 
         Returns
         -------
-        w : ndarray, or float if input scalar
+        w : array_like
           The dark energy equation of state
 
         Notes
@@ -2746,7 +2735,7 @@ class w0waCDM(FLRW):
 
         Returns
         -------
-        I : ndarray, or float if input scalar
+        I : array_like
           The scaling of the energy density of dark energy with redshift.
 
         Notes
@@ -2788,8 +2777,8 @@ class Flatw0waCDM(w0waCDM):
     Parameters
     ----------
 
-    H0 : float or `~astropy.units.Quantity`
-        Hubble constant at z = 0. If a float, must be in [km/sec/Mpc]
+    H0 : float
+        Hubble constant at z = 0 in km s-1 Mpc-1.
 
     Om0 : float
         Omega matter: density of non-relativistic matter in units of the
@@ -2803,20 +2792,19 @@ class Flatw0waCDM(w0waCDM):
         Negative derivative of the dark energy equation of state with respect
         to the scale factor. A cosmological constant has w0=-1.0 and wa=0.0.
 
-    Tcmb0 : float or scalar `~astropy.units.Quantity`, optional
-        Temperature of the CMB z=0. If a float, must be in [K].
-        Default: 0 [K]. Setting this to zero will turn off both photons
-        and neutrinos (even massive ones).
+    Tcmb0 : float, optional
+        Temperature of the CMB z=0 in K. Default: 0. Setting this to zero will
+        turn off both photons and neutrinos (even massive ones).
 
     Neff : float, optional
         Effective number of Neutrino species. Default 3.04.
 
-    m_nu : `~astropy.units.Quantity`, optional
-        Mass of each neutrino species. If this is a scalar Quantity, then all
+    m_nu : float or list of floats, optional
+        Mass of each neutrino species in eV. If this is a scalar, then all
         neutrino species are assumed to have that mass. Otherwise, the mass of
         each species. The actual number of neutrino species (and hence the
         number of elements of m_nu if it is not scalar) must be the floor of
-        Neff. Typically this means you should provide three neutrino masses
+        Neff.  Typically this means you should provide three neutrino masses
         unless you are considering something like a sterile neutrino.
 
     Ob0 : float or None, optional
@@ -2889,8 +2877,8 @@ class wpwaCDM(FLRW):
     Parameters
     ----------
 
-    H0 : float or `~astropy.units.Quantity`
-        Hubble constant at z = 0. If a float, must be in [km/sec/Mpc]
+    H0 : float
+        Hubble constant at z = 0 in km s-1 Mpc-1.
 
     Om0 : float
         Omega matter: density of non-relativistic matter in units of the
@@ -2911,20 +2899,19 @@ class wpwaCDM(FLRW):
     zp : float, optional
         Pivot redshift -- the redshift where w(z) = wp
 
-    Tcmb0 : float or scalar `~astropy.units.Quantity`, optional
-        Temperature of the CMB z=0. If a float, must be in [K].
-        Default: 0 [K]. Setting this to zero will turn off both photons
-        and neutrinos (even massive ones).
+    Tcmb0 : float, optional
+        Temperature of the CMB z=0 in K.  Default: 0. Setting this to zero will
+        turn off both photons and neutrinos (even massive ones).
 
     Neff : float, optional
         Effective number of Neutrino species. Default 3.04.
 
-    m_nu : `~astropy.units.Quantity`, optional
-        Mass of each neutrino species. If this is a scalar Quantity, then all
+    m_nu : float or list of floats, optional
+        Mass of each neutrino species in eV. If this is a scalar, then all
         neutrino species are assumed to have that mass. Otherwise, the mass of
         each species. The actual number of neutrino species (and hence the
         number of elements of m_nu if it is not scalar) must be the floor of
-        Neff. Typically this means you should provide three neutrino masses
+        Neff.  Typically this means you should provide three neutrino masses
         unless you are considering something like a sterile neutrino.
 
     Ob0 : float or None, optional
@@ -3000,7 +2987,7 @@ class wpwaCDM(FLRW):
 
         Returns
         -------
-        w : ndarray, or float if input scalar
+        w : array_like
           The dark energy equation of state
 
         Notes
@@ -3029,7 +3016,7 @@ class wpwaCDM(FLRW):
 
         Returns
         -------
-        I : ndarray, or float if input scalar
+        I : array_like
           The scaling of the energy density of dark energy with redshift.
 
         Notes
@@ -3074,8 +3061,8 @@ class w0wzCDM(FLRW):
     Parameters
     ----------
 
-    H0 : float or `~astropy.units.Quantity`
-        Hubble constant at z = 0. If a float, must be in [km/sec/Mpc]
+    H0 : float
+        Hubble constant at z = 0 in km s-1 Mpc-1.
 
     Om0 : float
         Omega matter: density of non-relativistic matter in units of the
@@ -3093,20 +3080,19 @@ class w0wzCDM(FLRW):
         Derivative of the dark energy equation of state with respect to z.
         A cosmological constant has w0=-1.0 and wz=0.0.
 
-    Tcmb0 : float or scalar `~astropy.units.Quantity`, optional
-        Temperature of the CMB z=0. If a float, must be in [K].
-        Default: 0 [K]. Setting this to zero will turn off both photons
-        and neutrinos (even massive ones).
+    Tcmb0 : float, optional
+        Temperature of the CMB z=0 in K.  Default: 0. Setting this to zero will
+        turn off both photons and neutrinos (even massive ones).
 
     Neff : float, optional
         Effective number of Neutrino species. Default 3.04.
 
-    m_nu : `~astropy.units.Quantity`, optional
-        Mass of each neutrino species. If this is a scalar Quantity, then all
+    m_nu : float or list of floats, optional
+        Mass of each neutrino species in eV. If this is a scalar, then all
         neutrino species are assumed to have that mass. Otherwise, the mass of
         each species. The actual number of neutrino species (and hence the
         number of elements of m_nu if it is not scalar) must be the floor of
-        Neff. Typically this means you should provide three neutrino masses
+        Neff.  Typically this means you should provide three neutrino masses
         unless you are considering something like a sterile neutrino.
 
     Ob0 : float or None, optional
@@ -3175,7 +3161,7 @@ class w0wzCDM(FLRW):
 
         Returns
         -------
-        w : ndarray, or float if input scalar
+        w : array_like
           The dark energy equation of state
 
         Notes
@@ -3202,7 +3188,7 @@ class w0wzCDM(FLRW):
 
         Returns
         -------
-        I : ndarray, or float if input scalar
+        I : array_like
           The scaling of the energy density of dark energy with redshift.
 
         Notes

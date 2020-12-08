@@ -46,9 +46,9 @@ doi: 10.1088/0067-0049/180/2/330. Table 1 (WMAP + BAO + SN ML).
 """
 
 # Note: if you add a new cosmology, please also update the table
-# in the 'Built-in Cosmologies' section of astropy/docs/cosmology/index.rst
-# in addition to the list above.  You also need to add them to the 'available'
-# list at the bottom of this file.
+# in the 'Built-in Cosmologies' section of docs/index.rst in addition to the
+# list above.  You also need to add them to the 'available' list at the bottom
+# of this file.
 
 # Planck 2018 paper VI
 # Unlike Planck 2015, the paper includes massive neutrinos in Om0, which here
