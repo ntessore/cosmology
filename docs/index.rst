@@ -452,28 +452,6 @@ the fact that five digits are quoted in the papers.
 Reference/API
 =============
 
-.. currentmodule:: cosmology
-
-Functions
----------
-
-.. autosummary::
-   :toctree: api
-
-   z_at_value
-
-Classes
--------
-
-.. autosummary::
-   :toctree: api
-
-   FLRW
-   FlatLambdaCDM
-   Flatw0waCDM
-   FlatwCDM
-   LambdaCDM
-   w0waCDM
-   w0wzCDM
-   wCDM
-   wpwaCDM
+.. automodapi:: cosmology
+   :no-main-docstr:
+   :no-inheritance-diagram:
